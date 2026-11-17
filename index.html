@@ -101,7 +101,7 @@ input::-webkit-date-and-time-value{text-align:left;margin:0}
 <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
 <script>
 const KEY='workhours.v1';
-const APP_VERSION='1.7';
+const APP_VERSION='1.8';
 const $=s=>document.querySelector(s);
 const pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
