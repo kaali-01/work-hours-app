@@ -29,6 +29,8 @@ h2{font-size:17px;font-weight:600;margin:0 0 8px}
 .mid{font-size:21px;font-weight:700;margin:2px 0}
 .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .nav button{background:var(--card);border:0;border-radius:12px;width:44px;height:44px;font-size:22px;color:var(--text)}
+.nav button.off{opacity:.25;pointer-events:none}
+.tap{cursor:pointer}.tap:active{opacity:.7}
 .nav .t{font-size:18px;font-weight:600}
 .seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin-bottom:12px}
 .seg button{flex:1;border:0;background:transparent;padding:8px;border-radius:8px;font:inherit;font-size:14px;color:var(--text)}
@@ -99,7 +101,7 @@ input::-webkit-date-and-time-value{text-align:left;margin:0}
 <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
 <script>
 const KEY='workhours.v1';
-const APP_VERSION='1.3';
+const APP_VERSION='1.6';
 const $=s=>document.querySelector(s);
 const pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -138,16 +140,20 @@ const col=j=>j&&j.color==='purple'?['var(--purple)','var(--purple-bg)']:['var(--
 function shiftMin(s){const a=toMin(s.start),b0=toMin(s.end);if(a==null||b0==null)return 0;let b=b0;if(b<=a)b+=1440;return Math.max(0,b-a-(Number(s.brk)||0))}
 function rateFor(jobId,date){const j=job(jobId);if(!j||!j.wages.length)return null;
   const w=[...j.wages].sort((a,b)=>a.from<b.from?-1:1);let r=w[0].rate;for(const x of w){if(x.from<=date)r=x.rate}return r}
-function shiftPay(s){const r=rateFor(s.job,s.date);if(r==null)return null;return Math.round(shiftMin(s)/60*r*100)+Math.round((Number(s.extra)||0)*100)}
-function stats(jobId,pred){let min=0,c=0,n=0,miss=false;for(const s of S.shifts){if(jobId&&s.job!==jobId)continue;if(!pred(s))continue;n++;min+=shiftMin(s);const p=shiftPay(s);if(p==null)miss=true;else c+=p}return{min,cents:c,count:n,missing:miss}}
+function shiftPayRaw(s){const r=rateFor(s.job,s.date);if(r==null)return null;return shiftMin(s)/60*r*100+(Number(s.extra)||0)*100}
+function shiftPay(s){const p=shiftPayRaw(s);return p==null?null:Math.round(p)}
+function stats(jobId,pred){let min=0,c=0,n=0,miss=false;for(const s of S.shifts){if(jobId&&s.job!==jobId)continue;if(!pred(s))continue;n++;min+=shiftMin(s);const p=shiftPayRaw(s);if(p==null)miss=true;else c+=p}return{min,cents:Math.round(c),count:n,missing:miss}}
 const money=st=>st.missing&&!st.cents?'Set wage':eur(st.cents);
 function weekRange(){const d=new Date();const day=(d.getDay()+6)%7;const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day);const sun=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6);return[fmtDate(mon),fmtDate(sun)]}
 
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800)}
 function go(tab){V.tab=tab;closeSheet();render();window.scrollTo(0,0)}
 function setMode(m){V.mode=m;if(m==='year')V.year=Number(V.ym.slice(0,4));render()}
-function shiftMonth(n){V.ym=addMonths(V.ym,n);render()}
-function shiftYear(n){V.year+=n;render()}
+function maxYM(){const t=todayStr().slice(0,7);const last=S.shifts.reduce((m,s)=>s.date.slice(0,7)>m?s.date.slice(0,7):m,t);return last}
+function maxYear(){const t=Number(todayStr().slice(0,4));const ty=S.tips.reduce((m,x)=>Math.max(m,Number(x.from.slice(0,4))),t);return Math.max(Number(maxYM().slice(0,4)),ty)}
+function shiftMonth(n){const nx=addMonths(V.ym,n);if(n>0&&nx>maxYM())return;V.ym=nx;render()}
+function shiftYear(n){if(n>0&&V.year+n>maxYear())return;V.year+=n;render()}
+function openShifts(f){V.filter=f;go('shifts')}
 function openMonth(ym){V.ym=ym;V.mode='month';render();window.scrollTo(0,0)}
 
 function render(){const m=$('#main');
@@ -159,8 +165,8 @@ function render(){const m=$('#main');
   $('#fab').style.display=(V.tab==='home'||V.tab==='shifts')?'block':'none'}
 
 const seg=()=>`<div class="seg"><button class="${V.mode==='month'?'on':''}" onclick="setMode('month')">Month</button><button class="${V.mode==='year'?'on':''}" onclick="setMode('year')">Year</button></div>`;
-const monthNav=()=>`<div class="nav"><button onclick="shiftMonth(-1)" aria-label="Previous month">‹</button><div class="t">${monthLabel(V.ym)}</div><button onclick="shiftMonth(1)" aria-label="Next month">›</button></div>`;
-const yearNav=()=>`<div class="nav"><button onclick="shiftYear(-1)" aria-label="Previous year">‹</button><div class="t">${V.year}</div><button onclick="shiftYear(1)" aria-label="Next year">›</button></div>`;
+const monthNav=()=>{const atEnd=addMonths(V.ym,1)>maxYM();return `<div class="nav"><button onclick="shiftMonth(-1)" aria-label="Previous month">‹</button><div class="t">${monthLabel(V.ym)}</div><button onclick="shiftMonth(1)" aria-label="Next month" class="${atEnd?'off':''}">›</button></div>`};
+const yearNav=()=>{const atEnd=V.year+1>maxYear();return `<div class="nav"><button onclick="shiftYear(-1)" aria-label="Previous year">‹</button><div class="t">${V.year}</div><button onclick="shiftYear(1)" aria-label="Next year" class="${atEnd?'off':''}">›</button></div>`};
 
 function banners(){let h='';
   if(todayStr()>='2027-01-01'&&S.jobs.some(j=>{const r=rateFor(j.id,todayStr());return r!=null&&r<14.6}))h+=`<div class="banner" style="background:var(--warn-bg);color:var(--warn)">The minimum wage is 14,60 € from January 2027. Add your new wage in Settings.<br><button class="link" style="color:var(--warn)" onclick="go('settings')">Go to settings</button></div>`;
@@ -170,21 +176,17 @@ function banners(){let h='';
   return h}
 
 function shiftRow(s){const j=job(s.job);const [fg]=col(j);const p=shiftPay(s);
-  return `<div class="item" onclick="openShift('${s.id}')"><span class="dot" style="background:${fg}"></span><div style="flex:1;min-width:0"><div>${dayLabel(s.date)} <span class="small muted">· ${esc(j?j.name:'?')}</span></div><div class="small muted">${s.start}–${s.end}${Number(s.brk)?` · ${s.brk} min break`:''}${s.note?' · '+esc(s.note):''}</div></div><div style="text-align:right"><div style="font-weight:600">${hm(shiftMin(s))}</div><div class="small muted">${p==null?'—':eur(p)}</div></div></div>`}
+  return `<div class="item tap" onclick="viewShift('${s.id}')"><span class="dot" style="background:${fg}"></span><div style="flex:1;min-width:0"><div>${dayLabel(s.date)} <span class="small muted">· ${esc(j?j.name:'?')}</span></div><div class="small muted">${s.start}–${s.end}${Number(s.brk)?` · ${s.brk} min break`:''}${s.note?' · '+esc(s.note):''}</div></div><div style="text-align:right"><div style="font-weight:600">${hm(shiftMin(s))}</div><div class="small muted">${p==null?'—':eur(p)}</div></div></div>`}
 
 function homeMonth(){const ym=V.ym,inM=s=>s.date.startsWith(ym);const tot=stats(null,inM);
   let h=`<h1>Hours</h1>${seg()}${monthNav()}${banners()}`;
-  h+=`<div class="card"><div class="muted small">Earned in ${monthOnly(ym)}</div><div class="big">${money(tot)}</div><div class="muted">${hm(tot.min)} · ${tot.count} shift${tot.count===1?'':'s'}</div></div>`;
-  h+=`<div class="grid2">`+S.jobs.map(j=>{const st=stats(j.id,inM);const [fg,bg]=col(j);return `<div class="job" style="background:${bg};color:${fg}"><div class="small" style="font-weight:600">${esc(j.name)}</div><div class="mid">${money(st)}</div><div class="small">${hm(st.min)} · ${st.count} shift${st.count===1?'':'s'}</div></div>`}).join('')+`</div>`;
+  h+=`<div class="card tap" onclick="openShifts('all')"><div class="row"><div class="muted small">Earned in ${monthOnly(ym)}</div><span class="muted small">See shifts ›</span></div><div class="big">${money(tot)}</div><div class="muted">${hm(tot.min)} · ${tot.count} shift${tot.count===1?'':'s'}</div></div>`;
+  h+=`<div class="grid2">`+S.jobs.map(j=>{const st=stats(j.id,inM);const [fg,bg]=col(j);return `<div class="job tap" onclick="openShifts('${j.id}')" style="background:${bg};color:${fg}"><div class="small" style="font-weight:600">${esc(j.name)}</div><div class="mid">${money(st)}</div><div class="small">${hm(st.min)} · ${st.count} shift${st.count===1?'':'s'}</div></div>`}).join('')+`</div>`;
   S.jobs.filter(j=>j.minijob).forEach(j=>{const st=stats(j.id,inM);const lim=Math.round((Number(S.settings.minijobLimit)||0)*100);const pct=lim?st.cents/lim:0;
     const c=pct>1?'var(--danger)':pct>.85?'var(--warn)':'#34C759';
     h+=`<div class="card"><div class="row"><h2 style="margin:0">Minijob limit · ${esc(j.name)}</h2></div><div class="small muted" style="margin-top:4px">${eur(st.cents)} of ${eur(lim)} this month</div><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${c}"></i></div><div class="small" style="margin-top:6px;${pct>1?'color:var(--danger)':pct>.85?'color:var(--warn)':''}">${st.cents>lim?'Over the limit by '+eur(st.cents-lim):eur(lim-st.cents)+' left'+(pct>.85?' – getting close':'')}</div></div>`});
   if(S.settings.weeklyOn){const [a,b]=weekRange();const st=stats(null,s=>s.date>=a&&s.date<=b);const lim=(Number(S.settings.weeklyLimit)||0)*60;const pct=lim?st.min/lim:0;const c=pct>1?'var(--danger)':pct>.85?'var(--warn)':'#34C759';
     h+=`<div class="card"><h2 style="margin:0">This week</h2><div class="small muted" style="margin-top:4px">${hm(st.min)} of ${S.settings.weeklyLimit} h · ${dayLabel(a)} – ${dayLabel(b)}</div><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${c}"></i></div>${pct>1?`<div class="small neg" style="margin-top:6px">Over by ${hm(st.min-lim)}</div>`:''}</div>`}
-  h+=`<div class="card"><h2>Payslip check</h2><div class="small muted" style="margin-bottom:6px">Enter the gross pay (Brutto) from your payslip for ${monthOnly(ym)}, without tips.</div>`+S.jobs.map(j=>{const st=stats(j.id,inM);const ps=S.payslips[j.id+'|'+ym];let r;
-    if(ps==null)r=`<button class="link" onclick="openPayslip('${j.id}')">Add amount</button>`;
-    else{const d=Math.round(ps*100)-st.cents;r=`<div style="text-align:right" onclick="openPayslip('${j.id}')"><div style="font-weight:600">${eur(ps*100)} paid</div><div class="small ${Math.abs(d)<=1?'pos':d<0?'neg':'pos'}">${Math.abs(d)<=1?'Matches':d<0?eur(-d)+' less than expected':eur(d)+' more than expected'}</div></div>`}
-    return `<div class="wage"><div><div style="font-weight:600">${esc(j.name)}</div><div class="small muted">Expected ${money(st)}</div></div>${r}</div>`}).join('')+`</div>`;
   const list=S.shifts.filter(inM).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
   h+=`<div class="card"><div class="row"><h2 style="margin:0">Shifts this month</h2>${list.length>5?`<button class="link" onclick="go('shifts')">See all</button>`:''}</div><div class="list">${list.length?list.slice(0,5).map(shiftRow).join(''):`<div class="empty">No shifts in ${monthOnly(ym)} yet.<br>Tap “+ Add shift” to log one.</div>`}</div></div>`;
   return h}
@@ -216,6 +218,11 @@ function showSheet(html){$('#sheet').innerHTML=html;$('#sheet').scrollTop=0;$('#
 function closeSheet(){$('#sheet-wrap').classList.add('hidden');unlockBody()}
 const sheetHead=t=>`<div class="sheet-h"><h2>${t}</h2><button class="x" onclick="closeSheet()" aria-label="Close">✕</button></div>`;
 
+function detailRow(k,v){return `<div class="wage"><div class="muted">${k}</div><div style="font-weight:600;text-align:right">${v}</div></div>`}
+function viewShift(id){const s=S.shifts.find(x=>x.id===id);if(!s)return;const j=job(s.job);const [fg]=col(j);const p=shiftPay(s);
+  showSheet(sheetHead('Shift')+`<div class="row" style="justify-content:flex-start;gap:10px;margin:6px 0 4px"><span class="dot" style="background:${fg}"></span><b>${esc(j?j.name:'?')}</b></div>`+
+    detailRow('Date',fullDate(s.date))+detailRow('Time',`${s.start}–${s.end}`)+detailRow('Unpaid break',Number(s.brk)?s.brk+' min':'None')+detailRow('Paid hours',hm(shiftMin(s)))+detailRow('Pay',p==null?'—':eur(p))+(s.extra?detailRow('Extra',eur(Math.round(s.extra*100))):'')+(s.note?detailRow('Note',esc(s.note)):'')+
+    `<button class="btn" onclick="openShift('${s.id}')">Edit this shift</button><button class="btn sec" onclick="closeSheet()">Close</button>`)}
 let draft=null;
 function lastShiftOf(jid){return S.shifts.filter(s=>s.job===jid).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start))[0]}
 function openShift(id){
@@ -263,8 +270,11 @@ function tipsView(){const y=String(V.year);const list=S.tips.filter(t=>t.from.st
   let h=`<h1>Tips</h1>${yearNav()}<div class="card"><div class="muted small">Tips logged for ${y}</div><div class="big">${eur(total)}</div>`;
   const byJob=S.jobs.map(j=>{const c=list.filter(t=>t.job===j.id).reduce((a,t)=>a+Math.round(t.amount*100),0);return c?`${esc(j.name)} ${eur(c)}`:''}).filter(Boolean).join(' · ');
   h+=`<div class="muted small">${byJob||'Optional: log tips for one month or several months at once.'}</div><button class="btn" onclick="openTip()">+ Add tips</button></div>`;
-  h+=`<div class="card"><div class="list">${list.length?list.map(t=>{const j=job(t.job);return `<div class="item" onclick="openTip('${t.id}')"><span class="dot" style="background:${j?col(j)[0]:'var(--muted)'}"></span><div style="flex:1;min-width:0"><div>${tipPeriod(t)}</div><div class="small muted">${j?esc(j.name):'General'}${t.note?' · '+esc(t.note):''}</div></div><div style="font-weight:600">${eur(Math.round(t.amount*100))}</div></div>`}).join(''):`<div class="empty">No tips logged for ${y}.</div>`}</div></div>`;
+  h+=`<div class="card"><div class="list">${list.length?list.map(t=>{const j=job(t.job);return `<div class="item tap" onclick="viewTip('${t.id}')"><span class="dot" style="background:${j?col(j)[0]:'var(--muted)'}"></span><div style="flex:1;min-width:0"><div>${tipPeriod(t)}</div><div class="small muted">${j?esc(j.name):'General'}${t.note?' · '+esc(t.note):''}</div></div><div style="font-weight:600">${eur(Math.round(t.amount*100))}</div></div>`}).join(''):`<div class="empty">No tips logged for ${y}.</div>`}</div></div>`;
   return h}
+function viewTip(id){const t=S.tips.find(x=>x.id===id);if(!t)return;const j=job(t.job);
+  showSheet(sheetHead('Tips')+detailRow('Period',tipPeriod(t))+detailRow('Job',j?esc(j.name):'General')+detailRow('Amount',eur(Math.round(t.amount*100)))+(t.note?detailRow('Note',esc(t.note)):'')+
+    `<button class="btn" onclick="openTip('${t.id}')">Edit these tips</button><button class="btn sec" onclick="closeSheet()">Close</button>`)}
 function openTip(id){const t=id?S.tips.find(x=>x.id===id):null;const ym=todayStr().slice(0,7);
   const d=t||{job:'louisiana',from:ym,to:ym,amount:'',note:''};
   let h=sheetHead(t?'Edit tips':'Add tips');
@@ -294,7 +304,7 @@ function settingsView(){let h=`<h1>Settings</h1>`;
   h+=`<div class="card"><h2>Limits</h2><label class="f">Minijob limit per month (€)</label><input type="text" inputmode="decimal" value="${String(S.settings.minijobLimit).replace('.',',')}" onchange="const v=parseMoney(this.value);if(v!=null&&v>=0){S.settings.minijobLimit=v;save();toast('Saved')}"><div class="small muted" style="margin-top:6px">603 € in 2026, 633 € from 2027.</div>`;
   h+=`<div class="toggle" style="margin-top:8px"><div><div>Weekly hours limit</div><div class="small muted">Werkstudent 20-hour rule during lecture periods, all jobs together. Turn off in semester breaks.</div></div><input type="checkbox" class="sw" ${S.settings.weeklyOn?'checked':''} onchange="S.settings.weeklyOn=this.checked;save()"></div><label class="f" style="margin-top:4px">Hours per week</label><input type="number" inputmode="decimal" value="${S.settings.weeklyLimit}" onchange="const v=parseMoney(this.value);if(v!=null&&v>0){S.settings.weeklyLimit=v;save();toast('Saved')}"></div>`;
   const lb=S.settings.lastBackup;
-  h+=`<div class="card"><h2>Backup</h2><div class="small muted">Your data is stored only on this iPhone. Save a backup to Files or iCloud Drive now and then.${lb?`<br>Last backup: ${new Date(lb).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`:''}</div><button class="btn" onclick="exportBackup()">Export backup</button><button class="btn sec" onclick="exportCSV()">Export shifts for Excel (CSV)</button><button class="btn sec" onclick="$('#importFile').click()">Import backup or data file</button></div>`;
+  h+=`<div class="card"><h2>Backup</h2><div class="small muted">Your data is stored only on this iPhone. Save a backup to Files or iCloud Drive now and then. The backup file is the one you can import again; the Excel file is for viewing.${lb?`<br>Last backup: ${new Date(lb).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`:''}</div><button class="btn" onclick="exportBackup()">Export backup</button><button class="btn sec" onclick="exportExcel()">Export Excel (like your sheet)</button><button class="btn sec" onclick="$('#importFile').click()">Import backup or data file</button></div>`;
   h+=`<div class="card"><h2>Danger zone</h2><button class="btn danger" onclick="wipe()">Delete all data</button></div>`;
   h+=`<div class="small muted" style="text-align:center;margin:8px 0">Work Hours ${APP_VERSION} · ${S.shifts.length} shifts · works offline</div>`;
   return h}
@@ -314,6 +324,134 @@ function exportCSV(){const q=v=>{v=String(v??'');return /[;"\n]/.test(v)?'"'+v.r
   [...S.shifts].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).forEach(s=>{const r=rateFor(s.job,s.date);const p=shiftPay(s);
     rows.push([s.date,job(s.job)?job(s.job).name:s.job,s.start,s.end,s.brk||0,(shiftMin(s)/60).toFixed(2).replace('.',','),r==null?'':String(r).replace('.',','),p==null?'':(p/100).toFixed(2).replace('.',','),s.extra?String(s.extra).replace('.',','):'',s.note||''])});
   shareFile(`work-hours-${todayStr()}.csv`,'﻿'+rows.map(r=>r.map(q).join(';')).join('\n'),'text/csv')}
+/* ---------- Excel export (same layout and colours as the original sheet) ---------- */
+const XL_MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function makeZip(files){const enc=new TextEncoder();const parts=[];const cd=[];let off=0;
+  const u16=n=>[n&255,(n>>8)&255],u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>>24)&255];
+  for(const [name,txt] of files){const nb=enc.encode(name),db=enc.encode(txt),crc=crc32(db);
+    const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0)]);
+    parts.push(lh,nb,db);
+    cd.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb);
+    off+=lh.length+nb.length+db.length}
+  const cdSize=cd.reduce((a,b)=>a+b.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cdSize),...u32(off),...u16(0)]);
+  const all=[...parts,...cd,end];const out=new Uint8Array(all.reduce((a,b)=>a+b.length,0));let p=0;for(const a of all){out.set(a,p);p+=a.length}return out}
+const xesc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function colName(n){let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s}
+/* style ids – must match cellXfs order in XL_STYLES */
+const XS={def:0,head:1,date:2,time:3,dur:4,pay:5,hrs:6,sal:7,sumY:8,sumO:9,brTitle:10,bowTitle:11,tipYear:12,tipTot:13,tipMon:14,tipVal:15,cellB:16};
+function dateSerial(ds){const [y,m,d]=ds.split('-').map(Number);return Math.round((Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/864e5)}
+function Sheet(zoom){const rows={};const cols={};const merges=[];
+  const set=(c,r,v)=>{(rows[r]=rows[r]||{})[c]=v};
+  return{
+    str:(c,r,v,s)=>set(c,r,{t:'s',v,s:s??XS.def}),
+    num:(c,r,v,s)=>set(c,r,{t:'n',v,s:s??XS.def}),
+    f:(c,r,v,s)=>set(c,r,{t:'f',v,s:s??XS.def}),
+    blank:(c,r,s)=>set(c,r,{t:'b',s}),
+    width:(c,w)=>{cols[c]=w},merge:ref=>merges.push(ref),
+    xml(){let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+      x+=`<sheetViews><sheetView workbookViewId="0" zoomScale="${zoom||130}" zoomScaleNormal="${zoom||130}"/></sheetViews><sheetFormatPr baseColWidth="10" defaultColWidth="10.83" defaultRowHeight="16"/>`;
+      const cs=Object.keys(cols).map(Number).sort((a,b)=>a-b);if(cs.length)x+='<cols>'+cs.map(c=>`<col min="${c+1}" max="${c+1}" width="${cols[c]}" customWidth="1"/>`).join('')+'</cols>';
+      x+='<sheetData>';for(const r of Object.keys(rows).map(Number).sort((a,b)=>a-b)){x+=`<row r="${r}">`;
+        for(const c of Object.keys(rows[r]).map(Number).sort((a,b)=>a-b)){const cell=rows[r][c],ref=colName(c)+r;
+          if(cell.t==='s')x+=`<c r="${ref}" s="${cell.s}" t="inlineStr"><is><t xml:space="preserve">${xesc(cell.v)}</t></is></c>`;
+          else if(cell.t==='n')x+=`<c r="${ref}" s="${cell.s}"><v>${cell.v}</v></c>`;
+          else if(cell.t==='f')x+=`<c r="${ref}" s="${cell.s}"><f>${xesc(cell.v)}</f></c>`;
+          else x+=`<c r="${ref}" s="${cell.s}"/>`}
+        x+='</row>'}
+      x+='</sheetData>';if(merges.length)x+=`<mergeCells count="${merges.length}">`+merges.map(m=>`<mergeCell ref="${m}"/>`).join('')+'</mergeCells>';
+      return x+'</worksheet>'}}}
+const ACC='_([$€-2]\\ * #,##0.00_);_([$€-2]\\ * \\(#,##0.00\\);_([$€-2]\\ * &quot;-&quot;??_);_(@_)';
+const fillX=rgb=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${rgb}"/><bgColor indexed="64"/></patternFill></fill>`;
+const XL_STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+ `<numFmts count="2"><numFmt numFmtId="165" formatCode="[h]:mm"/><numFmt numFmtId="166" formatCode="${ACC}"/></numFmts>`+
+ '<fonts count="5"><font><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font><font><sz val="11"/><color rgb="FF757171"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font><font><sz val="10"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FF000000"/><name val="Calibri"/><family val="2"/></font></fonts>'+
+ '<fills count="11"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+['E7E6E6','FFFF00','B4C6E7','A9D08E','FFC000','AEAAAA','BFBFBF','FBE2D5','E2EFDA'].map(fillX).join('')+'</fills>'+
+ '<borders count="4"><border><left/><right/><top/><bottom/><diagonal/></border>'+
+ '<border><left style="hair"><color auto="1"/></left><right style="hair"><color auto="1"/></right><top style="hair"><color auto="1"/></top><bottom style="hair"><color auto="1"/></bottom><diagonal/></border>'+
+ '<border><left style="medium"><color auto="1"/></left><right style="medium"><color auto="1"/></right><top style="medium"><color auto="1"/></top><bottom style="medium"><color auto="1"/></bottom><diagonal/></border>'+
+ '<border><left/><right/><top/><bottom style="hair"><color auto="1"/></bottom><diagonal/></border></borders>'+
+ '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="17">'+
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+                                                     // 0 def
+ '<xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="0" applyFill="1" applyBorder="1"/>'+                       // 1 head
+ '<xf numFmtId="14" fontId="1" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1"/>'+ // 2 date
+ '<xf numFmtId="20" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'+              // 3 time
+ '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'+             // 4 dur
+ '<xf numFmtId="166" fontId="0" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+               // 5 pay
+ '<xf numFmtId="165" fontId="0" fillId="4" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+               // 6 total hrs
+ '<xf numFmtId="166" fontId="0" fillId="5" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+               // 7 salary
+ '<xf numFmtId="165" fontId="0" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+               // 8 sum yellow
+ '<xf numFmtId="165" fontId="0" fillId="6" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>'+               // 9 sum orange
+ '<xf numFmtId="0" fontId="0" fillId="7" borderId="3" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 10 BREAKS
+ '<xf numFmtId="0" fontId="2" fillId="8" borderId="3" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ // 11 BOWLING
+ '<xf numFmtId="0" fontId="4" fillId="9" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ // 12 tip year
+ '<xf numFmtId="0" fontId="4" fillId="10" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ // 13 tip total
+ '<xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>'+                       // 14 tip month
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ // 15 tip value
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>'+                                     // 16 bordered blank
+ '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+/* one job table: Date Start End Total | Pay TotalHrs Salary ; header row hr, data from hr+1 */
+function jobTable(sh,c0,hr,jobId,ym,nd){
+  ['Date','Start','End','Total','Pay','Total Hrs','Salary'].forEach((h,i)=>sh.str(c0+i,hr,h,XS.head));
+  const list=S.shifts.filter(s=>s.job===jobId&&s.date.startsWith(ym)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+  const byDay={};list.forEach(s=>{(byDay[s.date]=byDay[s.date]||[]).push(s)});
+  const C=k=>colName(c0+k);let r=hr+1;const first=r;
+  for(let d=1;d<=nd;d++){const ds=ym+'-'+pad(d);for(const s of (byDay[ds]||[null])){
+    sh.num(c0,r,dateSerial(ds),XS.date);
+    if(s){sh.num(c0+1,r,toMin(s.start)/1440,XS.time);sh.num(c0+2,r,toMin(s.end)/1440,XS.time)}else{sh.blank(c0+1,r,XS.time);sh.blank(c0+2,r,XS.time)}
+    sh.f(c0+3,r,`MOD(${C(2)}${r}-${C(1)}${r},1)`,XS.dur);r++}}
+  const sumRow=r;sh.f(c0+3,sumRow,`SUM(${C(3)}${first}:${C(3)}${r-1})`,XS.sumY);
+  return{first,sumRow,list,C}}
+/* breaks table: title merged, header row 2, at least 6 rows, orange sum below */
+function breaksTable(sh,c0,list,title,titleStyle){
+  sh.str(c0,1,title,titleStyle);for(let i=1;i<4;i++)sh.blank(c0+i,1,titleStyle);sh.merge(`${colName(c0)}1:${colName(c0+3)}1`);
+  ['Date','Start','End','Total'].forEach((h,i)=>sh.str(c0+i,2,h,XS.head));
+  const br=list.filter(s=>Number(s.brk)>0);const n=Math.max(6,br.length);const L=colName(c0+3);
+  for(let i=0;i<n;i++){const r=3+i,b=br[i];
+    if(b){sh.num(c0,r,dateSerial(b.date),XS.date);sh.blank(c0+1,r,XS.time);sh.blank(c0+2,r,XS.time);sh.num(c0+3,r,Number(b.brk)/1440,XS.dur)}
+    else{sh.blank(c0,r,XS.date);sh.blank(c0+1,r,XS.time);sh.blank(c0+2,r,XS.time);sh.f(c0+3,r,`MOD(${colName(c0+2)}${r}-${colName(c0+1)}${r},1)`,XS.dur)}}
+  const sumRow=3+n;sh.f(c0+3,sumRow,`SUM(${L}3:${L}${sumRow-1})`,XS.sumO);return L+sumRow}
+function buildWorkbook(){
+  const years=[...new Set(S.shifts.map(s=>s.date.slice(0,4)).concat([todayStr().slice(0,4)]))].sort();
+  const sheets=[];const [J1,J2]=S.jobs;
+  for(const y of years)for(let m=1;m<=12;m++){const ym=y+'-'+pad(m);const nd=new Date(+y,m,0).getDate();const sh=Sheet(130);
+    const a=jobTable(sh,0,1,J1.id,ym,nd);
+    const rate=rateFor(J1.id,ym+'-01');rate!=null?sh.num(4,a.first,rate,XS.pay):sh.blank(4,a.first,XS.pay);
+    const brRef=breaksTable(sh,8,a.list,'BREAKS',XS.brTitle);
+    sh.f(5,a.first,`D${a.sumRow}-${brRef}`,XS.hrs);sh.f(6,a.first,`F${a.first}*24*E${a.first}`,XS.sal);
+    if(J2&&S.shifts.some(s=>s.job===J2.id&&s.date.startsWith(ym))){
+      sh.str(13,1,J2.name.toUpperCase()==='BOWLING'?'BOWLING ROOM':J2.name.toUpperCase(),XS.bowTitle);for(let i=14;i<17;i++)sh.blank(i,1,XS.bowTitle);sh.merge('N1:Q1');
+      const b=jobTable(sh,13,2,J2.id,ym,nd);
+      const r2=rateFor(J2.id,ym+'-01');r2!=null?sh.num(17,b.first,r2,XS.pay):sh.blank(17,b.first,XS.pay);
+      const br2=breaksTable(sh,21,b.list,'BREAKS',XS.brTitle);
+      sh.f(18,b.first,`Q${b.sumRow}-${br2}`,XS.hrs);sh.f(19,b.first,`S${b.first}*24*R${b.first}`,XS.sal)}
+    sheets.push([XL_MON[m-1]+' '+y.slice(2),sh])}
+  const tip=Sheet(150);tip.width(0,10.8);
+  years.forEach((y,i)=>{const c=1+i*3;tip.width(c,12);tip.width(c+1,10);tip.width(c+2,4);
+    tip.num(c,2,+y,XS.tipYear);tip.f(c+1,2,`SUM(${colName(c+1)}3:${colName(c+1)}14)`,XS.tipTot);
+    for(let m=1;m<=12;m++)tip.str(c,m+2,XL_MON[m-1].toUpperCase(),XS.tipMon);
+    const filled={};
+    S.tips.filter(t=>t.from.startsWith(y)).sort((a,b)=>a.from.localeCompare(b.from)).forEach(t=>{
+      const m1=+t.from.slice(5),m2=t.to.startsWith(y)?+t.to.slice(5):12;const r1=m1+2,r2=Math.max(r1,m2+2);
+      if(filled[r1]!=null){filled[r1]+=t.amount;tip.num(c+1,r1,Math.round(filled[r1]*100)/100,XS.tipVal);return}
+      filled[r1]=t.amount;tip.num(c+1,r1,Math.round(t.amount*100)/100,XS.tipVal);
+      for(let r=r1+1;r<=r2;r++){filled[r]=0;tip.blank(c+1,r,XS.tipVal)}
+      if(r2>r1)tip.merge(`${colName(c+1)}${r1}:${colName(c+1)}${r2}`)});
+    for(let r=3;r<=14;r++)if(filled[r]==null)tip.blank(c+1,r,XS.tipVal)});
+  sheets.push(['TIP',tip]);
+  const files=[];
+  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>']);
+  files.push(['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
+  files.push(['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheets.map(([n],i)=>`<sheet name="${xesc(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')+'</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>']);
+  files.push(['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')+`<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`]);
+  files.push(['xl/styles.xml',XL_STYLES]);
+  sheets.forEach(([,sh],i)=>files.push([`xl/worksheets/sheet${i+1}.xml`,sh.xml()]));
+  return makeZip(files)}
+function exportExcel(){try{const data=buildWorkbook();shareFile(`Work-hours-${todayStr()}.xlsx`,data,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}catch(e){alert('Could not create the Excel file.')}}
+
 let pendingImport=null;
 function importChosen(inp){const f=inp.files[0];inp.value='';if(!f)return;const rd=new FileReader();
   rd.onload=()=>{let d;try{d=JSON.parse(rd.result)}catch(e){alert('This file could not be read. Choose a backup (.json) file.');return}
