@@ -1,4 +1,4 @@
-const CACHE = 'work-hours-v2';
+const CACHE = 'work-hours-v3';
 const FILES = ['./', './index.html', './manifest.json', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

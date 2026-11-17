@@ -62,9 +62,9 @@ input[type=text],input[type=number],input[type=date],input[type=time],input[type
 input[type=date],input[type=time],input[type=month]{text-align:left;line-height:22px}
 input::-webkit-date-and-time-value{text-align:left;margin:0}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
-#sheet-wrap{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+#sheet-wrap{position:fixed;inset:0;overscroll-behavior:contain;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 #sheet-wrap.hidden{display:none}
-#sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);max-height:92vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);max-height:92vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
 #sheet *{max-width:100%}
 .two>div{min-width:0;overflow:hidden}
 .sheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
@@ -99,7 +99,7 @@ input::-webkit-date-and-time-value{text-align:left;margin:0}
 <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
 <script>
 const KEY='workhours.v1';
-const APP_VERSION='1.1';
+const APP_VERSION='1.2';
 const $=s=>document.querySelector(s);
 const pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -209,8 +209,11 @@ function shiftsView(){const ym=V.ym;const f=V.filter;
   return h}
 
 /* ---------- Sheet ---------- */
-function showSheet(html){$('#sheet').innerHTML=html;$('#sheet-wrap').classList.remove('hidden');document.body.style.overflow='hidden'}
-function closeSheet(){$('#sheet-wrap').classList.add('hidden');document.body.style.overflow=''}
+let lockY=0,locked=false;
+function lockBody(){if(locked)return;locked=true;lockY=window.scrollY;const b=document.body.style;b.position='fixed';b.top=-lockY+'px';b.left='0';b.right='0';b.overflow='hidden'}
+function unlockBody(){if(!locked)return;locked=false;const b=document.body.style;b.position='';b.top='';b.left='';b.right='';b.overflow='';window.scrollTo(0,lockY)}
+function showSheet(html){$('#sheet').innerHTML=html;$('#sheet').scrollTop=0;$('#sheet-wrap').classList.remove('hidden');lockBody()}
+function closeSheet(){$('#sheet-wrap').classList.add('hidden');unlockBody()}
 const sheetHead=t=>`<div class="sheet-h"><h2>${t}</h2><button class="x" onclick="closeSheet()" aria-label="Close">✕</button></div>`;
 
 let draft=null;
@@ -218,9 +221,9 @@ function lastShiftOf(jid){return S.shifts.filter(s=>s.job===jid).sort((a,b)=>(b.
 function openShift(id){
   const s=id?S.shifts.find(x=>x.id===id):null;
   if(s)draft={...s,_new:false};
-  else{const jid=job(S.settings.lastJob)?S.settings.lastJob:S.jobs[0].id;const last=lastShiftOf(jid);
+  else{const jid=job(S.settings.lastJob)?S.settings.lastJob:S.jobs[0].id;
     const today=todayStr();const date=today.startsWith(V.ym)?today:V.ym+'-01';
-    draft={id:null,job:jid,date,start:last?last.start:'18:00',end:last?last.end:'23:00',brk:last?Number(last.brk)||0:0,extra:'',note:'',_new:true,_touched:false}}
+    draft={id:null,job:jid,date,start:'',end:'',brk:0,extra:'',note:'',_new:true}}
   renderShiftSheet()}
 function renderShiftSheet(){const d=draft;const j=job(d.job);
   let h=sheetHead(d._new?'Add shift':'Edit shift');
@@ -235,7 +238,7 @@ function renderShiftSheet(){const d=draft;const j=job(d.job);
   if(!d._new)h+=`<button class="btn danger" onclick="deleteShift()">Delete shift</button>`;
   showSheet(h);updPreview()}
 function brkChips(){return [0,15,30,45,60].map(m=>`<button class="chip ${Number(draft.brk)===m?'on':''}" onclick="draft.brk=${m};$('#dBrk').value='';$('#brkChips').innerHTML=brkChips();updPreview()">${m===0?'None':m+' min'}</button>`).join('')}
-function pickJob(id){draft.job=id;if(draft._new&&!draft._touched){const last=lastShiftOf(id);draft.start=last?last.start:'18:00';draft.end=last?last.end:'23:00';draft.brk=last?Number(last.brk)||0:0}renderShiftSheet()}
+function pickJob(id){draft.job=id;renderShiftSheet()}
 function updPreview(){const el=$('#dPrev');if(!el)return;$('#dErr').textContent='';
   if(!draft.start||!draft.end){el.textContent='Enter start and end time';return}
   const m=shiftMin(draft);const p=shiftPay(draft);const over=toMin(draft.end)<=toMin(draft.start);
