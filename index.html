@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hours">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Work Hours</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--text:#1f1e1c;--muted:#6b6a65;--line:#e6e3db;--primary:#1f1e1c;--on-primary:#fff;--teal:#0F6E56;--teal-bg:#E1F5EE;--purple:#534AB7;--purple-bg:#EEEDFE;--warn:#854F0B;--warn-bg:#FAEEDA;--danger:#A32D2D;--danger-bg:#FCEBEB;--ok:#3B6D11;--ok-bg:#EAF3DE;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#22211f;--text:#f1efe8;--muted:#a3a29b;--line:#383733;--primary:#f1efe8;--on-primary:#141413;--teal:#5DCAA5;--teal-bg:#0b3a31;--purple:#AFA9EC;--purple-bg:#2a2560;--warn:#FAC775;--warn-bg:#412402;--danger:#F09595;--danger-bg:#501313;--ok:#97C459;--ok-bg:#173404}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 110px);max-width:560px;margin:0 auto}
+h1{font-size:30px;font-weight:700;margin:6px 0 12px;letter-spacing:-.4px}
+h2{font-size:17px;font-weight:600;margin:0 0 8px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.big{font-size:36px;font-weight:700;letter-spacing:-.6px;margin:2px 0}
+.mid{font-size:21px;font-weight:700;margin:2px 0}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.nav button{background:var(--card);border:0;border-radius:12px;width:44px;height:44px;font-size:22px;color:var(--text)}
+.nav .t{font-size:18px;font-weight:600}
+.seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:transparent;padding:8px;border-radius:8px;font:inherit;font-size:14px;color:var(--text)}
+.seg button.on{background:var(--card);font-weight:600}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:600;background:var(--primary);color:var(--on-primary);text-align:center;margin-top:10px}
+.btn.sec{background:var(--bg);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:var(--danger-bg);color:var(--danger)}
+.link{background:none;border:0;color:var(--text);font:inherit;font-size:14px;font-weight:600;padding:6px 0;text-decoration:underline}
+.fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 76px);height:56px;padding:0 22px;border-radius:28px;border:0;background:var(--primary);color:var(--on-primary);font:inherit;font-size:17px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.22);z-index:5}
+#tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+#tabs button{flex:1;border:0;background:none;padding:8px 0 6px;font:inherit;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+#tabs button.on{color:var(--text);font-weight:600}
+#tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.job{border-radius:16px;padding:14px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:5px;flex:none}
+.list .item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:12px}
+.list .item:last-child{border-bottom:0}
+.list .day{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:14px 0 2px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;border-radius:4px}
+.banner{border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:8px 14px;font:inherit;font-size:14px;color:var(--text)}
+.chip.on{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.jobpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jobpick button{border-radius:14px;padding:14px;font:inherit;font-weight:600;border:2px solid var(--line);background:var(--card);color:var(--muted)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+input,select{font:inherit;font-size:17px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);min-height:48px;margin:0}
+input[type=text],input[type=number]{-webkit-appearance:none;appearance:none}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+#sheet-wrap{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+#sheet-wrap.hidden{display:none}
+#sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sheet-h h2{margin:0;font-size:20px}
+.x{border:0;background:var(--bg);color:var(--text);width:34px;height:34px;border-radius:17px;font-size:18px}
+.err{color:var(--danger);font-size:14px;margin-top:10px}
+.preview{background:var(--bg);border-radius:12px;padding:12px;margin-top:16px;text-align:center;font-weight:600}
+.empty{text-align:center;padding:22px 8px;color:var(--muted)}
+.toggle{display:flex;justify-content:space-between;align-items:center;padding:10px 0;gap:12px}
+.sw{-webkit-appearance:none;appearance:none;width:51px;height:31px;min-height:31px;border-radius:16px;background:var(--line);position:relative;padding:0;border:0;flex:none}
+.sw:checked{background:#34C759}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:14px;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw:checked::after{left:22px}
+.wage{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.del{border:0;background:none;color:var(--danger);font:inherit;font-size:14px;padding:4px 8px}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 150px);transform:translateX(-50%);background:var(--primary);color:var(--on-primary);padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
+#toast.show{opacity:1}
+.pos{color:var(--ok)}.neg{color:var(--danger)}
+</style>
+</head>
+<body>
+<main id="main"></main>
+<button class="fab" id="fab" onclick="openShift()">+ Add shift</button>
+<nav id="tabs">
+  <button data-tab="home" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-tab="shifts" onclick="go('shifts')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Shifts</button>
+  <button data-tab="tips" onclick="go('tips')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4 4 0 1 0 0 7M7 11h6M7 13.5h6"/></svg>Tips</button>
+  <button data-tab="settings" onclick="go('settings')"><svg viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>Settings</button>
+</nav>
+<div id="sheet-wrap" class="hidden" onclick="if(event.target===this)closeSheet()"><div id="sheet"></div></div>
+<div id="toast"></div>
+<input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
+<script>
+const KEY='workhours.v1';
+const APP_VERSION='1.0';
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmtDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayStr=()=>fmtDate(new Date());
+const eurF=new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'});
+const eur=c=>eurF.format((c||0)/100);
+const parseMoney=v=>{const n=parseFloat(String(v||'').trim().replace(/\s/g,'').replace(',','.'));return isFinite(n)?n:null};
+function hm(min){min=Math.round(min||0);const h=Math.floor(min/60),m=min%60;return m?`${h}h ${pad(m)}m`:`${h}h`}
+function ymDate(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1)}
+const monthLabel=ym=>ymDate(ym).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+const monthShort=ym=>ymDate(ym).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+const monthOnly=ym=>ymDate(ym).toLocaleDateString('en-GB',{month:'long'});
+function addMonths(ym,n){let [y,m]=ym.split('-').map(Number);m+=n;while(m>12){m-=12;y++}while(m<1){m+=12;y--}return y+'-'+pad(m)}
+function parseD(ds){const [y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d)}
+const dayLabel=ds=>parseD(ds).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+const fullDate=ds=>parseD(ds).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+function toMin(t){if(!t)return null;const [h,m]=t.split(':').map(Number);return h*60+m}
+
+function defaultState(){return{version:1,
+  jobs:[{id:'louisiana',name:'Louisiana',color:'teal',type:'Werkstudent',wages:[{from:'2026-01-01',rate:13.9}],extraPay:false,minijob:false},
+        {id:'bowling',name:'Bowling',color:'purple',type:'Minijob',wages:[{from:'2026-11-01',rate:14.5}],extraPay:false,minijob:true}],
+  shifts:[],tips:[],payslips:{},
+  settings:{minijobLimit:603,weeklyOn:true,weeklyLimit:20,lastJob:'louisiana',lastBackup:null}}}
+function migrate(d){const def=defaultState();d.settings=Object.assign(def.settings,d.settings||{});
+  d.jobs=Array.isArray(d.jobs)&&d.jobs.length?d.jobs:def.jobs;d.jobs.forEach(j=>{j.wages=j.wages||[]});
+  d.shifts=d.shifts||[];d.tips=d.tips||[];d.payslips=d.payslips||{};d.version=1;return d}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return migrate(JSON.parse(r))}catch(e){}return defaultState()}
+let S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Could not save. Your phone storage may be full.')}}
+
+const V={tab:'home',ym:todayStr().slice(0,7),mode:'month',year:Number(todayStr().slice(0,4)),filter:'all'};
+const job=id=>S.jobs.find(j=>j.id===id);
+const col=j=>j&&j.color==='purple'?['var(--purple)','var(--purple-bg)']:['var(--teal)','var(--teal-bg)'];
+function shiftMin(s){const a=toMin(s.start),b0=toMin(s.end);if(a==null||b0==null)return 0;let b=b0;if(b<=a)b+=1440;return Math.max(0,b-a-(Number(s.brk)||0))}
+function rateFor(jobId,date){const j=job(jobId);if(!j||!j.wages.length)return null;
+  const w=[...j.wages].sort((a,b)=>a.from<b.from?-1:1);let r=w[0].rate;for(const x of w){if(x.from<=date)r=x.rate}return r}
+function shiftPay(s){const r=rateFor(s.job,s.date);if(r==null)return null;return Math.round(shiftMin(s)/60*r*100)+Math.round((Number(s.extra)||0)*100)}
+function stats(jobId,pred){let min=0,c=0,n=0,miss=false;for(const s of S.shifts){if(jobId&&s.job!==jobId)continue;if(!pred(s))continue;n++;min+=shiftMin(s);const p=shiftPay(s);if(p==null)miss=true;else c+=p}return{min,cents:c,count:n,missing:miss}}
+const money=st=>st.missing&&!st.cents?'Set wage':eur(st.cents);
+function weekRange(){const d=new Date();const day=(d.getDay()+6)%7;const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day);const sun=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6);return[fmtDate(mon),fmtDate(sun)]}
+
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1800)}
+function go(tab){V.tab=tab;closeSheet();render();window.scrollTo(0,0)}
+function setMode(m){V.mode=m;if(m==='year')V.year=Number(V.ym.slice(0,4));render()}
+function shiftMonth(n){V.ym=addMonths(V.ym,n);render()}
+function shiftYear(n){V.year+=n;render()}
+function openMonth(ym){V.ym=ym;V.mode='month';render();window.scrollTo(0,0)}
+
+function render(){const m=$('#main');
+  if(V.tab==='home')m.innerHTML=V.mode==='month'?homeMonth():homeYear();
+  else if(V.tab==='shifts')m.innerHTML=shiftsView();
+  else if(V.tab==='tips')m.innerHTML=tipsView();
+  else m.innerHTML=settingsView();
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===V.tab));
+  $('#fab').style.display=(V.tab==='home'||V.tab==='shifts')?'block':'none'}
+
+const seg=()=>`<div class="seg"><button class="${V.mode==='month'?'on':''}" onclick="setMode('month')">Month</button><button class="${V.mode==='year'?'on':''}" onclick="setMode('year')">Year</button></div>`;
+const monthNav=()=>`<div class="nav"><button onclick="shiftMonth(-1)" aria-label="Previous month">‹</button><div class="t">${monthLabel(V.ym)}</div><button onclick="shiftMonth(1)" aria-label="Next month">›</button></div>`;
+const yearNav=()=>`<div class="nav"><button onclick="shiftYear(-1)" aria-label="Previous year">‹</button><div class="t">${V.year}</div><button onclick="shiftYear(1)" aria-label="Next year">›</button></div>`;
+
+function banners(){let h='';
+  if(todayStr()>='2027-01-01'&&S.jobs.some(j=>{const r=rateFor(j.id,todayStr());return r!=null&&r<14.6}))h+=`<div class="banner" style="background:var(--warn-bg);color:var(--warn)">The minimum wage is 14,60 € from January 2027. Add your new wage in Settings.<br><button class="link" style="color:var(--warn)" onclick="go('settings')">Go to settings</button></div>`;
+  if(!S.jobs.some(j=>j.wages.length))h+=`<div class="banner" style="background:var(--warn-bg);color:var(--warn)">Add your hourly wages so the app can calculate your pay.<br><button class="link" style="color:var(--warn)" onclick="go('settings')">Go to settings</button></div>`;
+  const lb=S.settings.lastBackup;const days=lb?(Date.now()-new Date(lb).getTime())/864e5:999;
+  if(S.shifts.length>=5&&days>30)h+=`<div class="banner" style="background:var(--bg);border:1px solid var(--line)">${lb?'Your last backup was over a month ago.':'You haven\'t made a backup yet.'} Save one to Files or iCloud Drive so your data is safe.<br><button class="link" onclick="exportBackup()">Back up now</button></div>`;
+  return h}
+
+function shiftRow(s){const j=job(s.job);const [fg]=col(j);const p=shiftPay(s);
+  return `<div class="item" onclick="openShift('${s.id}')"><span class="dot" style="background:${fg}"></span><div style="flex:1;min-width:0"><div>${dayLabel(s.date)} <span class="small muted">· ${esc(j?j.name:'?')}</span></div><div class="small muted">${s.start}–${s.end}${Number(s.brk)?` · ${s.brk} min break`:''}${s.note?' · '+esc(s.note):''}</div></div><div style="text-align:right"><div style="font-weight:600">${hm(shiftMin(s))}</div><div class="small muted">${p==null?'—':eur(p)}</div></div></div>`}
+
+function homeMonth(){const ym=V.ym,inM=s=>s.date.startsWith(ym);const tot=stats(null,inM);
+  let h=`<h1>Hours</h1>${seg()}${monthNav()}${banners()}`;
+  h+=`<div class="card"><div class="muted small">Earned in ${monthOnly(ym)}</div><div class="big">${money(tot)}</div><div class="muted">${hm(tot.min)} · ${tot.count} shift${tot.count===1?'':'s'}</div></div>`;
+  h+=`<div class="grid2">`+S.jobs.map(j=>{const st=stats(j.id,inM);const [fg,bg]=col(j);return `<div class="job" style="background:${bg};color:${fg}"><div class="small" style="font-weight:600">${esc(j.name)}</div><div class="mid">${money(st)}</div><div class="small">${hm(st.min)} · ${st.count} shift${st.count===1?'':'s'}</div></div>`}).join('')+`</div>`;
+  S.jobs.filter(j=>j.minijob).forEach(j=>{const st=stats(j.id,inM);const lim=Math.round((Number(S.settings.minijobLimit)||0)*100);const pct=lim?st.cents/lim:0;
+    const c=pct>1?'var(--danger)':pct>.85?'var(--warn)':'#34C759';
+    h+=`<div class="card"><div class="row"><h2 style="margin:0">Minijob limit · ${esc(j.name)}</h2></div><div class="small muted" style="margin-top:4px">${eur(st.cents)} of ${eur(lim)} this month</div><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${c}"></i></div><div class="small" style="margin-top:6px;${pct>1?'color:var(--danger)':pct>.85?'color:var(--warn)':''}">${st.cents>lim?'Over the limit by '+eur(st.cents-lim):eur(lim-st.cents)+' left'+(pct>.85?' – getting close':'')}</div></div>`});
+  if(S.settings.weeklyOn){const [a,b]=weekRange();const st=stats(null,s=>s.date>=a&&s.date<=b);const lim=(Number(S.settings.weeklyLimit)||0)*60;const pct=lim?st.min/lim:0;const c=pct>1?'var(--danger)':pct>.85?'var(--warn)':'#34C759';
+    h+=`<div class="card"><h2 style="margin:0">This week</h2><div class="small muted" style="margin-top:4px">${hm(st.min)} of ${S.settings.weeklyLimit} h · ${dayLabel(a)} – ${dayLabel(b)}</div><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${c}"></i></div>${pct>1?`<div class="small neg" style="margin-top:6px">Over by ${hm(st.min-lim)}</div>`:''}</div>`}
+  h+=`<div class="card"><h2>Payslip check</h2><div class="small muted" style="margin-bottom:6px">Enter the gross pay (Brutto) from your payslip for ${monthOnly(ym)}, without tips.</div>`+S.jobs.map(j=>{const st=stats(j.id,inM);const ps=S.payslips[j.id+'|'+ym];let r;
+    if(ps==null)r=`<button class="link" onclick="openPayslip('${j.id}')">Add amount</button>`;
+    else{const d=Math.round(ps*100)-st.cents;r=`<div style="text-align:right" onclick="openPayslip('${j.id}')"><div style="font-weight:600">${eur(ps*100)} paid</div><div class="small ${Math.abs(d)<=1?'pos':d<0?'neg':'pos'}">${Math.abs(d)<=1?'Matches':d<0?eur(-d)+' less than expected':eur(d)+' more than expected'}</div></div>`}
+    return `<div class="wage"><div><div style="font-weight:600">${esc(j.name)}</div><div class="small muted">Expected ${money(st)}</div></div>${r}</div>`}).join('')+`</div>`;
+  const list=S.shifts.filter(inM).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
+  h+=`<div class="card"><div class="row"><h2 style="margin:0">Shifts this month</h2>${list.length>5?`<button class="link" onclick="go('shifts')">See all</button>`:''}</div><div class="list">${list.length?list.slice(0,5).map(shiftRow).join(''):`<div class="empty">No shifts in ${monthOnly(ym)} yet.<br>Tap “+ Add shift” to log one.</div>`}</div></div>`;
+  return h}
+
+function homeYear(){const y=String(V.year),inY=s=>s.date.startsWith(y);const tot=stats(null,inY);
+  let h=`<h1>Hours</h1>${seg()}${yearNav()}${banners()}`;
+  const tipsY=S.tips.filter(t=>t.from.startsWith(y)).reduce((a,t)=>a+Math.round(t.amount*100),0);
+  h+=`<div class="card"><div class="muted small">Earned in ${y}</div><div class="big">${money(tot)}</div><div class="muted">${hm(tot.min)} · ${tot.count} shifts${tipsY?` · plus ${eur(tipsY)} tips`:''}</div></div>`;
+  h+=`<div class="grid2">`+S.jobs.map(j=>{const st=stats(j.id,inY);const [fg,bg]=col(j);return `<div class="job" style="background:${bg};color:${fg}"><div class="small" style="font-weight:600">${esc(j.name)}</div><div class="mid">${money(st)}</div><div class="small">${hm(st.min)}</div></div>`}).join('')+`</div>`;
+  let rows='';for(let m=12;m>=1;m--){const ym=y+'-'+pad(m);const st=stats(null,s=>s.date.startsWith(ym));if(!st.count)continue;
+    const dots=S.jobs.map(j=>{const n=stats(j.id,s=>s.date.startsWith(ym)).count;return n?`<span class="dot" style="background:${col(j)[0]};margin-right:4px"></span>`:''}).join('');
+    rows+=`<div class="item" onclick="openMonth('${ym}')"><div style="flex:1">${monthOnly(ym)} <span style="margin-left:6px">${dots}</span></div><div style="text-align:right"><div style="font-weight:600">${money(st)}</div><div class="small muted">${hm(st.min)}</div></div><span class="muted">›</span></div>`}
+  h+=`<div class="card"><h2>By month</h2><div class="list">${rows||`<div class="empty">No shifts in ${y}.</div>`}</div></div>`;
+  return h}
+
+function shiftsView(){const ym=V.ym;const f=V.filter;
+  const list=S.shifts.filter(s=>s.date.startsWith(ym)&&(f==='all'||s.job===f)).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
+  const st=stats(f==='all'?null:f,s=>s.date.startsWith(ym));
+  let h=`<h1>Shifts</h1>${monthNav()}<div class="chips" style="margin-bottom:12px"><button class="chip ${f==='all'?'on':''}" onclick="V.filter='all';render()">All</button>${S.jobs.map(j=>`<button class="chip ${f===j.id?'on':''}" onclick="V.filter='${j.id}';render()">${esc(j.name)}</button>`).join('')}</div>`;
+  h+=`<div class="card"><div class="row"><div><div class="small muted">Total</div><div class="mid">${hm(st.min)}</div></div><div style="text-align:right"><div class="small muted">${st.count} shift${st.count===1?'':'s'}</div><div class="mid">${money(st)}</div></div></div></div>`;
+  h+=`<div class="card"><div class="list">${list.length?list.map(shiftRow).join(''):`<div class="empty">No shifts here yet.</div>`}</div></div>`;
+  return h}
+
+/* ---------- Sheet ---------- */
+function showSheet(html){$('#sheet').innerHTML=html;$('#sheet-wrap').classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeSheet(){$('#sheet-wrap').classList.add('hidden');document.body.style.overflow=''}
+const sheetHead=t=>`<div class="sheet-h"><h2>${t}</h2><button class="x" onclick="closeSheet()" aria-label="Close">✕</button></div>`;
+
+let draft=null;
+function lastShiftOf(jid){return S.shifts.filter(s=>s.job===jid).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start))[0]}
+function openShift(id){
+  const s=id?S.shifts.find(x=>x.id===id):null;
+  if(s)draft={...s,_new:false};
+  else{const jid=job(S.settings.lastJob)?S.settings.lastJob:S.jobs[0].id;const last=lastShiftOf(jid);
+    const today=todayStr();const date=today.startsWith(V.ym)?today:V.ym+'-01';
+    draft={id:null,job:jid,date,start:last?last.start:'',end:last?last.end:'',brk:last?Number(last.brk)||0:0,extra:'',note:'',_new:true,_touched:false}}
+  renderShiftSheet()}
+function renderShiftSheet(){const d=draft;const j=job(d.job);
+  let h=sheetHead(d._new?'Add shift':'Edit shift');
+  h+=`<label class="f">Job</label><div class="jobpick">${S.jobs.map(x=>{const [fg,bg]=col(x);const on=x.id===d.job;return `<button onclick="pickJob('${x.id}')" style="${on?`border-color:${fg};background:${bg};color:${fg}`:''}">${esc(x.name)}</button>`}).join('')}</div>`;
+  h+=`<label class="f">Date</label><input type="date" value="${d.date}" oninput="draft.date=this.value;updPreview()">`;
+  h+=`<div class="two"><div><label class="f">Start</label><input type="time" id="dStart" value="${d.start}" oninput="draft.start=this.value;draft._touched=true;updPreview()"></div><div><label class="f">End</label><input type="time" id="dEnd" value="${d.end}" oninput="draft.end=this.value;draft._touched=true;updPreview()"></div></div>`;
+  h+=`<label class="f">Unpaid break (minutes)</label><div class="chips" id="brkChips">${brkChips()}</div><input type="number" inputmode="numeric" min="0" step="1" id="dBrk" style="margin-top:8px" placeholder="Other: type minutes" value="${[0,15,30,45,60].includes(Number(d.brk))?'':d.brk}" oninput="draft.brk=Math.max(0,parseInt(this.value)||0);$('#brkChips').innerHTML=brkChips();updPreview()">`;
+  if(j&&j.extraPay)h+=`<label class="f">Extra pay for this shift (€, optional)</label><input type="text" inputmode="decimal" placeholder="0,00" value="${d.extra??''}" oninput="draft.extra=parseMoney(this.value)||'';updPreview()">`;
+  h+=`<label class="f">Note (optional)</label><input type="text" value="${esc(d.note)}" placeholder="Private event" oninput="draft.note=this.value">`;
+  h+=`<div class="preview" id="dPrev"></div><div class="err" id="dErr"></div>`;
+  h+=`<button class="btn" onclick="saveShift()">Save shift</button>`;
+  if(!d._new)h+=`<button class="btn danger" onclick="deleteShift()">Delete shift</button>`;
+  showSheet(h);updPreview()}
+function brkChips(){return [0,15,30,45,60].map(m=>`<button class="chip ${Number(draft.brk)===m?'on':''}" onclick="draft.brk=${m};$('#dBrk').value='';$('#brkChips').innerHTML=brkChips();updPreview()">${m===0?'None':m+' min'}</button>`).join('')}
+function pickJob(id){draft.job=id;if(draft._new&&!draft._touched){const last=lastShiftOf(id);draft.start=last?last.start:'';draft.end=last?last.end:'';draft.brk=last?Number(last.brk)||0:0}renderShiftSheet()}
+function updPreview(){const el=$('#dPrev');if(!el)return;$('#dErr').textContent='';
+  if(!draft.start||!draft.end){el.textContent='Enter start and end time';return}
+  const m=shiftMin(draft);const p=shiftPay(draft);const over=toMin(draft.end)<=toMin(draft.start);
+  el.innerHTML=`${hm(m)} paid${p!=null?' · '+eur(p):''}${over?'<div class="small muted" style="font-weight:400">Ends after midnight</div>':''}${p==null?'<div class="small muted" style="font-weight:400">Add a wage in Settings to see pay</div>':''}`}
+function saveShift(){const d=draft;const err=$('#dErr');
+  if(!d.date){err.textContent='Choose a date.';return}
+  if(!d.start||!d.end){err.textContent='Enter both start and end time.';return}
+  if(shiftMin(d)<=0){err.textContent='The break is longer than the shift. Check the times.';return}
+  const rec={id:d.id||uid(),job:d.job,date:d.date,start:d.start,end:d.end,brk:Number(d.brk)||0,extra:d.extra===''?'':Number(d.extra)||'',note:(d.note||'').trim()};
+  const i=S.shifts.findIndex(x=>x.id===rec.id);if(i>=0)S.shifts[i]=rec;else S.shifts.push(rec);
+  S.settings.lastJob=d.job;save();closeSheet();V.ym=rec.date.slice(0,7);render();toast('Shift saved')}
+function deleteShift(){if(!confirm('Delete this shift?'))return;S.shifts=S.shifts.filter(x=>x.id!==draft.id);save();closeSheet();render();toast('Shift deleted')}
+
+function openPayslip(jid){const j=job(jid);const key=jid+'|'+V.ym;const cur=S.payslips[key];
+  showSheet(sheetHead('Payslip · '+esc(j.name))+`<div class="small muted">${monthLabel(V.ym)}. Expected from your shifts: ${money(stats(jid,s=>s.date.startsWith(V.ym)))}</div><label class="f">Amount paid (€)</label><input type="text" inputmode="decimal" id="psAmt" placeholder="0,00" value="${cur!=null?String(cur).replace('.',','):''}"><div class="err" id="psErr"></div><button class="btn" onclick="savePayslip('${key}')">Save</button>${cur!=null?`<button class="btn danger" onclick="delete S.payslips['${key}'];save();closeSheet();render()">Remove</button>`:''}`)}
+function savePayslip(key){const v=parseMoney($('#psAmt').value);if(v==null||v<0){$('#psErr').textContent='Enter an amount, for example 412,50.';return}S.payslips[key]=Math.round(v*100)/100;save();closeSheet();render();toast('Saved')}
+
+/* ---------- Tips ---------- */
+function tipPeriod(t){return t.from===t.to?monthLabel(t.from):`${monthShort(t.from)} – ${monthShort(t.to)}`}
+function tipsView(){const y=String(V.year);const list=S.tips.filter(t=>t.from.startsWith(y)||t.to.startsWith(y)).sort((a,b)=>b.from.localeCompare(a.from));
+  const total=list.reduce((a,t)=>a+Math.round(t.amount*100),0);
+  let h=`<h1>Tips</h1>${yearNav()}<div class="card"><div class="muted small">Tips logged for ${y}</div><div class="big">${eur(total)}</div>`;
+  const byJob=S.jobs.map(j=>{const c=list.filter(t=>t.job===j.id).reduce((a,t)=>a+Math.round(t.amount*100),0);return c?`${esc(j.name)} ${eur(c)}`:''}).filter(Boolean).join(' · ');
+  h+=`<div class="muted small">${byJob||'Optional: log tips for one month or several months at once.'}</div><button class="btn" onclick="openTip()">+ Add tips</button></div>`;
+  h+=`<div class="card"><div class="list">${list.length?list.map(t=>{const j=job(t.job);return `<div class="item" onclick="openTip('${t.id}')"><span class="dot" style="background:${j?col(j)[0]:'var(--muted)'}"></span><div style="flex:1;min-width:0"><div>${tipPeriod(t)}</div><div class="small muted">${j?esc(j.name):'General'}${t.note?' · '+esc(t.note):''}</div></div><div style="font-weight:600">${eur(Math.round(t.amount*100))}</div></div>`}).join(''):`<div class="empty">No tips logged for ${y}.</div>`}</div></div>`;
+  return h}
+function openTip(id){const t=id?S.tips.find(x=>x.id===id):null;const ym=todayStr().slice(0,7);
+  const d=t||{job:'louisiana',from:ym,to:ym,amount:'',note:''};
+  let h=sheetHead(t?'Edit tips':'Add tips');
+  h+=`<label class="f">Job</label><select id="tJob">${S.jobs.map(j=>`<option value="${j.id}" ${d.job===j.id?'selected':''}>${esc(j.name)}</option>`).join('')}<option value="" ${!d.job?'selected':''}>General</option></select>`;
+  h+=`<div class="two"><div><label class="f">From month</label><input type="month" id="tFrom" value="${d.from}"></div><div><label class="f">To month</label><input type="month" id="tTo" value="${d.to}"></div></div><div class="small muted" style="margin-top:6px">For a single month, use the same month in both.</div>`;
+  h+=`<label class="f">Amount (€)</label><input type="text" inputmode="decimal" id="tAmt" placeholder="0,00" value="${d.amount!==''?String(d.amount).replace('.',','):''}">`;
+  h+=`<label class="f">Note (optional)</label><input type="text" id="tNote" value="${esc(d.note)}">`;
+  h+=`<div class="err" id="tErr"></div><button class="btn" onclick="saveTip('${t?t.id:''}')">Save tips</button>`;
+  if(t)h+=`<button class="btn danger" onclick="if(confirm('Delete these tips?')){S.tips=S.tips.filter(x=>x.id!=='${t.id}');save();closeSheet();render()}">Delete</button>`;
+  showSheet(h)}
+function saveTip(id){const from=$('#tFrom').value,to=$('#tTo').value||from,amt=parseMoney($('#tAmt').value);const err=$('#tErr');
+  if(!from){err.textContent='Choose a month.';return}if(to<from){err.textContent='“To” must be the same as or after “From”.';return}
+  if(amt==null||amt<=0){err.textContent='Enter an amount, for example 85,00.';return}
+  const rec={id:id||uid(),job:$('#tJob').value,from,to,amount:Math.round(amt*100)/100,note:$('#tNote').value.trim()};
+  const i=S.tips.findIndex(x=>x.id===rec.id);if(i>=0)S.tips[i]=rec;else S.tips.push(rec);
+  save();closeSheet();V.year=Number(from.slice(0,4));render();toast('Tips saved')}
+
+/* ---------- Settings ---------- */
+function settingsView(){let h=`<h1>Settings</h1>`;
+  S.jobs.forEach(j=>{const [fg]=col(j);const w=[...j.wages].sort((a,b)=>b.from.localeCompare(a.from));
+    h+=`<div class="card"><div class="row" style="justify-content:flex-start;gap:10px;margin-bottom:6px"><span class="dot" style="background:${fg};width:12px;height:12px;border-radius:6px"></span><h2 style="margin:0">${esc(j.name)}</h2>${j.type?`<span class="small muted">${j.type}</span>`:''}</div>`;
+    h+=`<label class="f">Name</label><input type="text" value="${esc(j.name)}" onchange="const v=this.value.trim();if(v){job('${j.id}').name=v;save();render()}">`;
+    h+=`<label class="f">Hourly wage</label>${w.length?w.map(x=>`<div class="wage"><div><div style="font-weight:600">${eur(Math.round(x.rate*100))} / hour</div><div class="small muted">from ${fullDate(x.from)}</div></div><button class="del" onclick="delWage('${j.id}','${x.from}')">Remove</button></div>`).join(''):`<div class="small muted">No wage yet.</div>`}`;
+    h+=`<div class="two" style="margin-top:10px"><div><label class="f" style="margin-top:0">Valid from</label><input type="date" id="wf-${j.id}" value="${w.length?todayStr():'2026-01-01'}"></div><div><label class="f" style="margin-top:0">€ per hour</label><input type="text" inputmode="decimal" id="wr-${j.id}" placeholder="13,90"></div></div><button class="btn sec" onclick="addWage('${j.id}')">${w.length?'Add new wage (raise)':'Save wage'}</button>`;
+    h+=`<div class="toggle" style="margin-top:8px"><div><div>Minijob</div><div class="small muted">Track the monthly earnings limit</div></div><input type="checkbox" class="sw" ${j.minijob?'checked':''} onchange="job('${j.id}').minijob=this.checked;save()"></div>`;
+    h+=`<div class="toggle"><div><div>Extra pay field</div><div class="small muted">For surcharges or bonuses per shift</div></div><input type="checkbox" class="sw" ${j.extraPay?'checked':''} onchange="job('${j.id}').extraPay=this.checked;save()"></div></div>`});
+  h+=`<div class="card"><h2>Limits</h2><label class="f">Minijob limit per month (€)</label><input type="text" inputmode="decimal" value="${String(S.settings.minijobLimit).replace('.',',')}" onchange="const v=parseMoney(this.value);if(v!=null&&v>=0){S.settings.minijobLimit=v;save();toast('Saved')}"><div class="small muted" style="margin-top:6px">603 € in 2026, 633 € from 2027.</div>`;
+  h+=`<div class="toggle" style="margin-top:8px"><div><div>Weekly hours limit</div><div class="small muted">Werkstudent 20-hour rule during lecture periods, all jobs together. Turn off in semester breaks.</div></div><input type="checkbox" class="sw" ${S.settings.weeklyOn?'checked':''} onchange="S.settings.weeklyOn=this.checked;save()"></div><label class="f" style="margin-top:4px">Hours per week</label><input type="number" inputmode="decimal" value="${S.settings.weeklyLimit}" onchange="const v=parseMoney(this.value);if(v!=null&&v>0){S.settings.weeklyLimit=v;save();toast('Saved')}"></div>`;
+  const lb=S.settings.lastBackup;
+  h+=`<div class="card"><h2>Backup</h2><div class="small muted">Your data is stored only on this iPhone. Save a backup to Files or iCloud Drive now and then.${lb?`<br>Last backup: ${new Date(lb).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`:''}</div><button class="btn" onclick="exportBackup()">Export backup</button><button class="btn sec" onclick="exportCSV()">Export shifts for Excel (CSV)</button><button class="btn sec" onclick="$('#importFile').click()">Import backup or data file</button></div>`;
+  h+=`<div class="card"><h2>Danger zone</h2><button class="btn danger" onclick="wipe()">Delete all data</button></div>`;
+  h+=`<div class="small muted" style="text-align:center;margin:8px 0">Work Hours ${APP_VERSION} · ${S.shifts.length} shifts · works offline</div>`;
+  return h}
+function addWage(jid){const from=$('#wf-'+jid).value;const r=parseMoney($('#wr-'+jid).value);
+  if(!from){toast('Choose a date');return}if(r==null||r<=0){toast('Enter the wage, e.g. 13,90');return}
+  const j=job(jid);j.wages=j.wages.filter(w=>w.from!==from);j.wages.push({from,rate:Math.round(r*100)/100});save();render();toast('Wage saved')}
+function delWage(jid,from){if(!confirm('Remove this wage?'))return;const j=job(jid);j.wages=j.wages.filter(w=>w.from!==from);save();render()}
+function wipe(){if(!confirm('Delete all shifts, tips, wages and settings? This cannot be undone.'))return;if(!confirm('Are you sure? Consider exporting a backup first.'))return;S=defaultState();save();render();toast('All data deleted')}
+
+/* ---------- Export / import ---------- */
+async function shareFile(name,text,type){const blob=new Blob([text],{type});
+  try{const file=new File([blob],name,{type});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return true}}catch(e){if(e&&e.name==='AbortError')return false}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return true}
+async function exportBackup(){const ok=await shareFile(`work-hours-backup-${todayStr()}.json`,JSON.stringify(S,null,1),'application/json');if(ok){S.settings.lastBackup=new Date().toISOString();save();render()}}
+function exportCSV(){const q=v=>{v=String(v??'');return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const rows=[['Date','Job','Start','End','Break (min)','Hours','Hourly wage','Pay (EUR)','Extra (EUR)','Note']];
+  [...S.shifts].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).forEach(s=>{const r=rateFor(s.job,s.date);const p=shiftPay(s);
+    rows.push([s.date,job(s.job)?job(s.job).name:s.job,s.start,s.end,s.brk||0,(shiftMin(s)/60).toFixed(2).replace('.',','),r==null?'':String(r).replace('.',','),p==null?'':(p/100).toFixed(2).replace('.',','),s.extra?String(s.extra).replace('.',','):'',s.note||''])});
+  shareFile(`work-hours-${todayStr()}.csv`,'﻿'+rows.map(r=>r.map(q).join(';')).join('\n'),'text/csv')}
+let pendingImport=null;
+function importChosen(inp){const f=inp.files[0];inp.value='';if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{let d;try{d=JSON.parse(rd.result)}catch(e){alert('This file could not be read. Choose a backup (.json) file.');return}
+    if(!d||!Array.isArray(d.shifts)){alert('This file is not a Work Hours backup.');return}
+    pendingImport=d;
+    showSheet(sheetHead('Import data')+`<div>The file contains <b>${d.shifts.length}</b> shifts and <b>${(d.tips||[]).length}</b> tip entries.</div><button class="btn" onclick="doImport(false)">Add to my current data</button><div class="small muted" style="margin-top:6px">Keeps everything you already have. Entries that already exist are updated, not duplicated.</div><button class="btn sec" onclick="doImport(true)">Replace all my data</button><div class="small muted" style="margin-top:6px">Deletes what's on this phone and uses only the file.</div>`)};
+  rd.readAsText(f)}
+function doImport(replace){const d=pendingImport;if(!d)return;
+  if(replace){if(!confirm('Replace all data on this phone with the file?'))return;S=migrate(JSON.parse(JSON.stringify(d)))}
+  else{const byId=(arr,add)=>{const m=new Map(arr.map(x=>[x.id,x]));(add||[]).forEach(x=>{if(x&&x.id)m.set(x.id,x)});return[...m.values()]};
+    S.shifts=byId(S.shifts,d.shifts);S.tips=byId(S.tips,d.tips);Object.assign(S.payslips,d.payslips||{});
+    (d.jobs||[]).forEach(bj=>{const j=job(bj.id);if(!j){S.jobs.push(Object.assign({wages:[]},bj));return}
+      (bj.wages||[]).forEach(w=>{j.wages=j.wages.filter(x=>x.from!==w.from);j.wages.push(w)})})}
+  pendingImport=null;save();closeSheet();render();toast('Data imported')}
+
+render();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+</script>
+</body>
+</html>
