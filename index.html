@@ -101,7 +101,7 @@ input::-webkit-date-and-time-value{text-align:left;margin:0}
 <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
 <script>
 const KEY='workhours.v1';
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 const $=s=>document.querySelector(s);
 const pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -171,8 +171,8 @@ const yearNav=()=>{const atEnd=V.year+1>maxYear();return `<div class="nav"><butt
 function banners(){let h='';
   if(todayStr()>='2027-01-01'&&S.jobs.some(j=>{const r=rateFor(j.id,todayStr());return r!=null&&r<14.6}))h+=`<div class="banner" style="background:var(--warn-bg);color:var(--warn)">The minimum wage is 14,60 € from January 2027. Add your new wage in Settings.<br><button class="link" style="color:var(--warn)" onclick="go('settings')">Go to settings</button></div>`;
   if(!S.jobs.some(j=>j.wages.length))h+=`<div class="banner" style="background:var(--warn-bg);color:var(--warn)">Add your hourly wages so the app can calculate your pay.<br><button class="link" style="color:var(--warn)" onclick="go('settings')">Go to settings</button></div>`;
-  const lb=S.settings.lastBackup;const days=lb?(Date.now()-new Date(lb).getTime())/864e5:999;
-  if(S.shifts.length>=5&&days>30)h+=`<div class="banner" style="background:var(--bg);border:1px solid var(--line)">${lb?'Your last backup was over a month ago.':'You haven\'t made a backup yet.'} Save one to Files or iCloud Drive so your data is safe.<br><button class="link" onclick="exportBackup()">Back up now</button></div>`;
+  const lb=S.settings.lastBackup;const ago=d=>d?(Date.now()-new Date(d).getTime())/864e5:999;
+  if(S.shifts.length>=5&&ago(lb)>30&&ago(S.settings.backupHidden)>30)h+=`<div class="banner" style="background:var(--bg);border:1px solid var(--line);position:relative;padding-right:44px">${lb?'Your last backup was over a month ago.':'You haven\'t made a backup yet.'} Save one to Files or iCloud Drive so your data is safe.<br><button class="link" onclick="exportBackup()">Back up now</button><button class="x" style="position:absolute;top:8px;right:8px;width:30px;height:30px;font-size:15px" aria-label="Hide" onclick="S.settings.backupHidden=new Date().toISOString();save();render()">✕</button></div>`;
   return h}
 
 function shiftRow(s){const j=job(s.job);const [fg]=col(j);const p=shiftPay(s);
