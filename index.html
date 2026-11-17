@@ -101,7 +101,7 @@ input::-webkit-date-and-time-value{text-align:left;margin:0}
 <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importChosen(this)">
 <script>
 const KEY='workhours.v1';
-const APP_VERSION='1.6';
+const APP_VERSION='1.7';
 const $=s=>document.querySelector(s);
 const pad=n=>String(n).padStart(2,'0');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -221,7 +221,7 @@ const sheetHead=t=>`<div class="sheet-h"><h2>${t}</h2><button class="x" onclick=
 function detailRow(k,v){return `<div class="wage"><div class="muted">${k}</div><div style="font-weight:600;text-align:right">${v}</div></div>`}
 function viewShift(id){const s=S.shifts.find(x=>x.id===id);if(!s)return;const j=job(s.job);const [fg]=col(j);const p=shiftPay(s);
   showSheet(sheetHead('Shift')+`<div class="row" style="justify-content:flex-start;gap:10px;margin:6px 0 4px"><span class="dot" style="background:${fg}"></span><b>${esc(j?j.name:'?')}</b></div>`+
-    detailRow('Date',fullDate(s.date))+detailRow('Time',`${s.start}–${s.end}`)+detailRow('Unpaid break',Number(s.brk)?s.brk+' min':'None')+detailRow('Paid hours',hm(shiftMin(s)))+detailRow('Pay',p==null?'—':eur(p))+(s.extra?detailRow('Extra',eur(Math.round(s.extra*100))):'')+(s.note?detailRow('Note',esc(s.note)):'')+
+    detailRow('Date',fullDate(s.date))+detailRow('Time',`${s.start}–${s.end}`)+detailRow('Break',Number(s.brk)?s.brk+' min':'None')+detailRow('Paid hours',hm(shiftMin(s)))+detailRow('Pay',p==null?'—':eur(p))+(s.extra?detailRow('Extra',eur(Math.round(s.extra*100))):'')+(s.note?detailRow('Note',esc(s.note)):'')+
     `<button class="btn" onclick="openShift('${s.id}')">Edit this shift</button><button class="btn sec" onclick="closeSheet()">Close</button>`)}
 let draft=null;
 function lastShiftOf(jid){return S.shifts.filter(s=>s.job===jid).sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start))[0]}
@@ -237,7 +237,7 @@ function renderShiftSheet(){const d=draft;const j=job(d.job);
   h+=`<label class="f">Job</label><div class="jobpick">${S.jobs.map(x=>{const [fg,bg]=col(x);const on=x.id===d.job;return `<button onclick="pickJob('${x.id}')" style="${on?`border-color:${fg};background:${bg};color:${fg}`:''}">${esc(x.name)}</button>`}).join('')}</div>`;
   h+=`<label class="f">Date</label><input type="date" value="${d.date}" oninput="draft.date=this.value;updPreview()">`;
   h+=`<div class="two"><div><label class="f">Start</label><input type="time" id="dStart" value="${d.start}" oninput="draft.start=this.value;draft._touched=true;updPreview()"></div><div><label class="f">End</label><input type="time" id="dEnd" value="${d.end}" oninput="draft.end=this.value;draft._touched=true;updPreview()"></div></div>`;
-  h+=`<label class="f">Unpaid break (minutes)</label><div class="chips" id="brkChips">${brkChips()}</div><input type="number" inputmode="numeric" min="0" step="1" id="dBrk" style="margin-top:8px" placeholder="Other: type minutes" value="${[0,15,30,45,60].includes(Number(d.brk))?'':d.brk}" oninput="draft.brk=Math.max(0,parseInt(this.value)||0);$('#brkChips').innerHTML=brkChips();updPreview()">`;
+  h+=`<label class="f">Break (minutes)</label><div class="chips" id="brkChips">${brkChips()}</div><input type="number" inputmode="numeric" min="0" step="1" id="dBrk" style="margin-top:8px" placeholder="Other: type minutes" value="${[0,15,30,45,60].includes(Number(d.brk))?'':d.brk}" oninput="draft.brk=Math.max(0,parseInt(this.value)||0);$('#brkChips').innerHTML=brkChips();updPreview()">`;
   if(j&&j.extraPay)h+=`<label class="f">Extra pay for this shift (€, optional)</label><input type="text" inputmode="decimal" placeholder="0,00" value="${d.extra??''}" oninput="draft.extra=parseMoney(this.value)||'';updPreview()">`;
   h+=`<label class="f">Note (optional)</label><input type="text" value="${esc(d.note)}" placeholder="Private event" oninput="draft.note=this.value">`;
   h+=`<div class="preview" id="dPrev"></div><div class="err" id="dErr"></div>`;
