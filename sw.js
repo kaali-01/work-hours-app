@@ -15,7 +15,7 @@ self.addEventListener('fetch', e => {
   if (isPage) {
     // Try for a fresh version, fall back to the saved copy when offline
     e.respondWith(
-      fetch(e.request).then(r => {
+      fetch(e.request, { cache: 'no-store' }).then(r => {
         if (!r.ok) return caches.match('./index.html').then(c => c || r);
         const copy = r.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return r;
       })
